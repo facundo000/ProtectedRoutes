@@ -1,4 +1,5 @@
 import { IsString, IsUUID, MinLength } from "class-validator";
+import { Unique } from "typeorm";
 
 export class CreateUserDto {
     @IsString()
@@ -17,4 +18,6 @@ export class CreateUserDto {
     @MinLength(5)
     password: string;
 
+    // @IsString()
+    // role: string
 }

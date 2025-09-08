@@ -1,26 +1,79 @@
-import { Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { User } from 'src/users/entities/user.entity';
+import { Repository } from 'typeorm';
+import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
+import { LoginUserDto } from './dto/login-user.dto';
+import { JwtPayload } from './interface/jwt-payload.interface';
+
 
 @Injectable()
 export class AuthService {
-  create(createAuthDto: CreateAuthDto) {
-    return 'This action adds a new auth';
+
+  constructor(
+      @InjectRepository(User)
+      private readonly UserRepository: Repository<User>,
+      private readonly jwtService: JwtService
+    ){}
+  
+  async register(createUserDto: CreateUserDto) {
+      try{
+        const { password, ...userData } = createUserDto;
+
+        const user = this.UserRepository.create(
+          {
+            ...userData,
+            password: bcrypt.hashSync(password, 10),
+            role: "user"
+          }
+        );
+        await this.UserRepository.save(user);
+         
+        const { password: _, ...userWithoutPassword } = user;
+  
+        return {
+          ...userWithoutPassword,
+          token: this.getJwtToken({ id: user.id})
+        };
+      }
+      catch(error){
+        console.log(error)
+      }
+    }
+
+    async login(loginUserDto: LoginUserDto){
+      const {username, password } = loginUserDto;
+      const user = await this.UserRepository.findOne({
+        where: {username},
+        select: {username: true, password: true, id:true}
+      });
+
+      if(!user){
+        throw new UnauthorizedException('Invalid credentials - Username')
+      }
+
+      if(!bcrypt.compareSync(password, user.password)){
+        throw new UnauthorizedException('Invalid credentials - password')
+      }
+
+       return {
+        user: user,
+        token: this.getJwtToken({ id: user.id })
+      }
+    }
+
+    private getJwtToken( payload: JwtPayload ) {
+    const token = this.jwtService.sign( payload );
+    return token;
   }
 
-  findAll() {
-    return `This action returns all auth`;
+  async checkAuthStatus( user: User ) {
+  
+  return {
+    user: user,
+    token: this.getJwtToken({ id: user.id }),
   }
-
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
-  }
-
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
-  }
+}
 }

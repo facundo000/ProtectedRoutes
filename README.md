@@ -43,15 +43,15 @@ Definir la entidad `Usuario` con los siguientes campos:
 ### 5. Endpoints
 
 #### Públicos (noAuth)
-- `POST /auth/register` → Crear usuario
-- `POST /auth/login` → Generar token
+~~- `POST /auth/register` → Crear usuario~~
+~~- `POST /auth/login` → Generar token~~
 
 #### Usuario autenticado
-- `GET /users/profile` → Devuelve datos del usuario autenticado
+~~- `GET /users/profile` → Devuelve datos del usuario autenticado~~
 
 #### Administrador
-- `GET /users` → Listar todos los usuarios
-- `DELETE /users/:id` → Borrar usuario
+~~- `GET /users` → Listar todos los usuarios~~
+~~- `DELETE /users/:id` → Borrar usuario~~
 - `PATCH /users/:id` → Cambiar rol (opcional)
 
 ---

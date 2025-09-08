@@ -4,7 +4,7 @@ import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 export class User {
     @PrimaryGeneratedColumn('uuid')
     id: string;
-    @Column()
+    @Column({ unique: true })
     username: string;
     @Column()
     name: string;
@@ -14,4 +14,6 @@ export class User {
     password: string;
     @Column()
     role: 'admin' | 'user';
+    // @Column()
+    // isActive: boolean
 }
