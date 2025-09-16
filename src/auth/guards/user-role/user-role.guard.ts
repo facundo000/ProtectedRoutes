@@ -22,10 +22,12 @@ export class UserRoleGuard implements CanActivate {
     if(!user)
       throw new BadRequestException('User not found (request)');
 
-    for(const role of user.role){
-      if(validRoles.includes(role)){
-        return true;
-      }
+    // Si no se definieron roles explícitos en el decorador, negar acceso (este guard solo corre cuando hay roles)
+    if (validRoles.length === 0) return false;
+
+    // user.role es un string ('admin' | 'user'), no un arreglo
+    if (validRoles.includes(user.role)) {
+      return true;
     }
 
     throw new ForbiddenException(`User ${user.username} need a valid role: [${validRoles}]`)

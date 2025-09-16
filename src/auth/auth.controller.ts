@@ -34,10 +34,8 @@ export class AuthController {
     return this.authService.checkAuthStatus( user )
   }
 
-  //!NO ME FUNCIONA
   @Get('private/users')
-  @UseGuards(AuthGuard())
-  @Auth(ValidRoles.USER)
+  @Auth()
   testingPrivateRoute(
     @Req() request: Express.Request,
     @GetUser() user: User,
@@ -52,6 +50,17 @@ export class AuthController {
       user,
       username,
       rawHeaders,
+    }
+  }
+
+  @Get('private2/admin')
+  @Auth( ValidRoles.ADMIN)
+  privateRoute3(
+    @GetUser() user: User,
+  ) {
+    return {
+      ok: true,
+      user
     }
   }
 }
