@@ -1,4 +1,5 @@
-import { IsString, IsUUID, MinLength } from "class-validator";
+import { IsEnum, IsOptional, IsString, IsUUID, MinLength } from "class-validator";
+import { ValidRoles } from "src/auth/interface/valid-roles";
 import { Unique } from "typeorm";
 
 export class CreateUserDto {
@@ -18,6 +19,7 @@ export class CreateUserDto {
     @MinLength(5)
     password: string;
 
-    // @IsString()
-    // role: string
+    @IsEnum(ValidRoles)
+    @IsOptional()
+    role: ValidRoles
 }

@@ -1,3 +1,4 @@
+import { ValidRoles } from "src/auth/interface/valid-roles";
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
@@ -12,8 +13,12 @@ export class User {
     surname: string;
     @Column()
     password: string;
-    @Column()
-    role: 'admin' | 'user';
+    @Column({
+        type: 'enum',
+        enum: ValidRoles,
+        default: ValidRoles.USER
+    })
+    role: ValidRoles;
     // @Column()
     // isActive: boolean
 }
