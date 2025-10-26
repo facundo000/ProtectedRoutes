@@ -7,11 +7,11 @@ import { UserRoleGuard } from '../guards/user-role/user-role.guard';
 export const Auth = (...roles: ValidRoles[]) => {
     if (roles.length === 0) {
         return applyDecorators(
-            UseGuards(AuthGuard())
+            UseGuards(AuthGuard('jwt'))
         );
     }
     return applyDecorators(
         RoleProtected(...roles),
-        UseGuards(AuthGuard(), UserRoleGuard)
+        UseGuards(AuthGuard('jwt'), UserRoleGuard)
     )
 }
