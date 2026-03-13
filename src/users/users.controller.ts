@@ -23,7 +23,7 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'Not Found' })
   @ApiResponse({ status: 500, description: 'Internal Server Error' })
   @Get()
-  @Auth( ValidRoles.ADMIN)
+  @Auth()
   findAll() {
     return this.usersService.findAll();
   }

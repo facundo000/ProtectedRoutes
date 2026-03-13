@@ -85,6 +85,6 @@ export class UsersService {
     }
     user.profileImage = filename;
     await this.UserRepository.save(user);
-    return { profileImage: `/uploads/${filename}` };
+    return { profileImage: `${process.env.APP_URL}/uploads/${filename}` };
   }
 }
