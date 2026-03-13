@@ -1,12 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ValidRoles } from 'src/auth/interface/valid-roles';
 import { Auth } from 'src/auth/decorators/auth.decorator';
 import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { User } from './entities/user.entity';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiResponse, ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { ApiOperation } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 
 @ApiTags('Users')
 @Controller('users')
@@ -54,6 +57,38 @@ export class UsersController {
     @Body() updateUserDto: UpdateUserDto,
   ) {
     return this.usersService.updateSelf(id, currentUser, updateUserDto);
+  }
+
+  @Post('upload-image')
+  @Auth()
+  @UseInterceptors(FileInterceptor('file', {
+    storage: diskStorage({
+      destination: './public/uploads',
+      filename: (_req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
+      },
+    }),
+    fileFilter: (_req, file, cb) => {
+      if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
+        return cb(new BadRequestException('Only image files are allowed (jpg, jpeg, png, gif, webp)'), false);
+      }
+      cb(null, true);
+    },
+    limits: { fileSize: 5 * 1024 * 1024 },
+  }))
+  @ApiOperation({ summary: 'Upload profile image for the authenticated user' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } } })
+  @ApiResponse({ status: 201, description: 'Image uploaded successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid file type or size' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  uploadImage(
+    @UploadedFile() file: Express.Multer.File,
+    @GetUser() currentUser: User,
+  ) {
+    if (!file) throw new BadRequestException('You must provide an image file');
+    return this.usersService.uploadProfileImage(currentUser, file.filename);
   }
 
   @Delete('remove/:id')

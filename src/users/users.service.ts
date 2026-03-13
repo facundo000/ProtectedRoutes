@@ -4,6 +4,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
+import { existsSync, unlinkSync } from 'fs';
+import { join } from 'path';
 
 @Injectable()
 export class UsersService {
@@ -60,7 +62,22 @@ export class UsersService {
       throw new ForbiddenException('You can only delete your own account');
     }
     const user = await this.findOne(id);
+    if (user.profileImage) {
+      const oldPath = join(process.cwd(), 'public', 'uploads', user.profileImage);
+      if (existsSync(oldPath)) unlinkSync(oldPath);
+    }
     await this.UserRepository.remove(user);
     return true;
+  }
+
+  async uploadProfileImage(currentUser: User, filename: string) {
+    const user = await this.findOne(currentUser.id);
+    if (user.profileImage) {
+      const oldPath = join(process.cwd(), 'public', 'uploads', user.profileImage);
+      if (existsSync(oldPath)) unlinkSync(oldPath);
+    }
+    user.profileImage = filename;
+    await this.UserRepository.save(user);
+    return { profileImage: `/uploads/${filename}` };
   }
 }

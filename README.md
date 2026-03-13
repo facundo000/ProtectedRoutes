@@ -1,76 +1,137 @@
 # Protected Routes API
 
-This API is designed for rapid implementation of protected routes and a dashboard where each user's record will be kept.
+API NestJS con autenticación JWT, control de acceso basado en roles y gestión de imagen de perfil por usuario.
 
-## Installation
+---
 
-1. Clone the repository:
-```
+## Requisitos previos
+
+- Node.js >= 18
+- PostgreSQL
+- Docker (opcional)
+
+---
+
+## Instalación
+
+1. Clona el repositorio e instala dependencias:
+```bash
 git clone https://github.com/your-username/protected-routes-api.git
-```
-
-2. Install dependencies:
-```
 cd protected-routes-api
 npm install
 ```
 
-3. Set up the environment variables:
-   - Create a `.env` file in the root directory of the project.
-   - Add the following environment variables to the `.env` file:
-     ```
-     DB_HOST=your-database-host
-     DB_PORT=your-database-port
-     DB_NAME=your-database-name
-     DB_USERNAME=your-database-username
-     DB_PASSWORD=your-database-password
-     ```
-
-4. Start the development server:
+2. Crea el archivo `.env` en la raíz del proyecto:
+```env
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=rutasProtegidas
+DB_USERNAME=postgres
+DB_PASSWORD=your-password
+JWT_SECRET=your-jwt-secret
+PORT=3000
 ```
+
+3. Levanta la base de datos con Docker (opcional):
+```bash
+docker compose up -d
+```
+
+4. Inicia el servidor en modo desarrollo:
+```bash
 npm run start:dev
 ```
 
-The API will be available at `http://localhost:3000/protected-routes/v1`.
+La API estará disponible en `http://localhost:3000/protected-routes/v1`.
 
-## Usage
+---
 
-The API provides the following endpoints:
+## Documentación Swagger
 
-### Swagger Documentation
-The API documentation is available at `http://localhost:3000/api`.
+Disponible en `http://localhost:3000/api` una vez iniciado el servidor.
 
-### Authentication
-The API uses JWT-based authentication. You can use the `/auth/login` endpoint to obtain an access token, which should be included in the `Authorization` header for subsequent requests.
+---
 
-### Protected Routes
-The API has several protected routes that can only be accessed by users with the appropriate roles. The roles are defined in the `UsersModule`.
+## Autenticación
 
-## API
+La API usa autenticación **JWT Bearer**. Al hacer login o registro se devuelve un token que debe incluirse en el header de las siguientes peticiones:
 
-The API provides the following endpoints:
+```
+Authorization: Bearer <token>
+```
 
-### Authentication
-- `POST /auth/login`: Authenticate a user and obtain an access token.
+El token expira en **1 hora**.
+
+---
+
+## Roles
+
+| Rol     | Descripción                                      |
+|---------|--------------------------------------------------|
+| `user`  | Usuario estándar. Gestiona su propia cuenta.     |
+| `admin` | Administrador. Acceso completo a todos los usuarios. |
+
+---
+
+## Endpoints
+
+Todos los endpoints tienen el prefijo `/protected-routes/v1`.
+
+### Auth
+
+| Método | Ruta                      | Acceso       | Descripción                              |
+|--------|---------------------------|--------------|------------------------------------------|
+| POST   | `/auth/register`          | Público      | Registra un nuevo usuario                |
+| POST   | `/auth/login`             | Público      | Inicia sesión y devuelve un JWT          |
+| GET    | `/auth/check-status`      | Opcional     | Verifica el estado de autenticación      |
 
 ### Users
-- `GET /users`: Get a list of all users.
-- `GET /users/:id`: Get a specific user by ID.
-- `POST /users`: Create a new user.
-- `PUT /users/:id`: Update an existing user.
-- `DELETE /users/:id`: Delete a user.
 
-### Roles
-- `GET /roles`: Get a list of all roles.
-- `GET /roles/:id`: Get a specific role by ID.
-- `POST /roles`: Create a new role.
-- `PUT /roles/:id`: Update an existing role.
-- `DELETE /roles/:id`: Delete a role.
+| Método | Ruta                        | Acceso            | Descripción                                         |
+|--------|-----------------------------|-------------------|-----------------------------------------------------|
+| GET    | `/users`                    | `admin`           | Lista todos los usuarios                            |
+| GET    | `/users/profile/:id`        | `user` / `admin`  | Obtiene perfil por ID (solo el propio si es `user`) |
+| PATCH  | `/users/:id`                | Autenticado       | Actualiza nombre y apellido de la propia cuenta     |
+| POST   | `/users/upload-image`       | Autenticado       | Sube o reemplaza la imagen de perfil propia         |
+| DELETE | `/users/remove/:id`         | `user` / `admin`  | Elimina la propia cuenta (admin puede eliminar cualquiera) |
 
-### Protected Routes
-- `GET /protected-routes/dashboard`: Get the dashboard data.
-- `POST /protected-routes/create-record`: Create a new record.
-- `PUT /protected-routes/update-record/:id`: Update an existing record.
-- `DELETE /protected-routes/delete-record/:id`: Delete a record.
+---
 
-For more detailed information about the API, please refer to the Swagger documentation at `http://localhost:3000/api`.
+## Imagen de perfil
+
+El endpoint `POST /users/upload-image` acepta un archivo mediante `multipart/form-data` con el campo `file`.
+
+- **Formatos permitidos:** `jpg`, `jpeg`, `png`, `gif`, `webp`
+- **Tamaño máximo:** 5 MB
+- Las imágenes se almacenan en `public/uploads/` y se sirven en `/uploads/<filename>`
+- Al subir una nueva imagen, la anterior se elimina automáticamente del disco
+- Al eliminar una cuenta, su imagen de perfil también se elimina
+
+**Ejemplo de respuesta:**
+```json
+{
+  "profileImage": "/uploads/1718000000000-123456789.jpg"
+}
+```
+
+---
+
+## Control de acceso por política
+
+- Un usuario con rol `user` **solo puede** ver, modificar y eliminar **su propia cuenta**.
+- Un usuario con rol `admin` puede realizar esas operaciones sobre **cualquier cuenta**.
+- Intentar operar sobre la cuenta de otro usuario devuelve `403 Forbidden`.
+
+---
+
+## Variables de entorno
+
+| Variable      | Descripción                    | Default |
+|---------------|--------------------------------|---------|
+| `DB_HOST`     | Host de la base de datos       | —       |
+| `DB_PORT`     | Puerto de PostgreSQL           | `5432`  |
+| `DB_NAME`     | Nombre de la base de datos     | —       |
+| `DB_USERNAME` | Usuario de PostgreSQL          | —       |
+| `DB_PASSWORD` | Contraseña de PostgreSQL       | —       |
+| `JWT_SECRET`  | Clave secreta para firmar JWTs | —       |
+| `PORT`        | Puerto del servidor            | `3000`  |

@@ -19,6 +19,9 @@ export class User {
         default: ValidRoles.USER
     })
     role: ValidRoles;
+
+    @Column({ nullable: true })
+    profileImage?: string;
     // @Column()
     // isActive: boolean
 }
