@@ -4,6 +4,11 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   @MinLength(2)
+  username?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
   name?: string;
 
   @IsOptional()

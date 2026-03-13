@@ -47,6 +47,13 @@ export class UsersService {
       throw new ForbiddenException('You can only update your own profile');
     }
     const user = await this.findOne(id);
+    if (typeof updateUserDto.username !== 'undefined') {
+      const existing = await this.UserRepository.findOneBy({ username: updateUserDto.username });
+      if (existing && existing.id !== id) {
+        throw new ForbiddenException('Username already taken');
+      }
+      user.username = updateUserDto.username;
+    }
     if (typeof updateUserDto.name !== 'undefined') {
       user.name = updateUserDto.name;
     }
